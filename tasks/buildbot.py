@@ -41,8 +41,7 @@ def fetch_build_from_buildbot(link, builder_name, build_number):
         buildbot_builds = buildbot_builder.builds
         buildbot_builds.cache()
         buildbot_build = buildbot_builds[build_number]
-        with transaction.atomic():
-            parse_build(buildbot_build, builder_name, build_number)
+        parse_build(buildbot_build, builder_name, build_number)
 
 def parse_build(buildbot_build, builder_name, build_number):
     builder, created = Builder.objects.get_or_create(name=builder_name)
@@ -58,13 +57,14 @@ def parse_build(buildbot_build, builder_name, build_number):
         'data': json.dumps(buildbot_build.data),
     }
 
-    build, created = Build.objects.get_or_create(number=build_number,
-                                                 builder=builder,
-                                                 defaults=build_data)
-    if not created:
-        for key, value in build_data.iteritems():
-            setattr(build, key, value)
-        build.save(update_fields=build_data.keys())
+    with transaction.atomic():
+        build, created = Build.objects.get_or_create(number=build_number,
+                                                     builder=builder,
+                                                     defaults=build_data)
+        if not created:
+            for key, value in build_data.iteritems():
+                setattr(build, key, value)
+            build.save(update_fields=build_data.keys())
 
     buildbot_properties = dict((prop[0], prop[1]) for prop in buildbot_build.properties)
     project_name = buildbot_properties.get('project', None) or buildbot_properties.get('branch', None)
@@ -104,14 +104,15 @@ def parse_change(buildbot_change, project, repository, build):
         'who': buildbot_change.get('who'),
     }
 
-    change, created = Change.objects.get_or_create(project=change_project,
-                                                   repository=change_repository,
-                                                   revision=buildbot_change.get('revision'),
-                                                   defaults=change_data)
-    if not created:
-        for key, value in change_data.iteritems():
-            setattr(change, key, value)
-        change.save(update_fields=change_data.keys())
+    with transaction.atomic():
+        change, created = Change.objects.get_or_create(project=change_project,
+                                                       repository=change_repository,
+                                                       revision=buildbot_change.get('revision'),
+                                                       defaults=change_data)
+        if not created:
+            for key, value in change_data.iteritems():
+                setattr(change, key, value)
+            change.save(update_fields=change_data.keys())
 
     build.changes.add(change)
 
