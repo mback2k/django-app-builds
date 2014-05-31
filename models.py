@@ -77,7 +77,7 @@ class Build(models.Model):
         return u'%s:%d' % (self.builder, self.number)
 
     def get_property(self, name, default=None):
-        if not self._properties:
+        if not hasattr(self, '_properties'):
             self._properties = json.loads(self.properties)
         for key, value, source in self._properties:
             if key == name:
