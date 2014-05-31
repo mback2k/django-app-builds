@@ -83,3 +83,7 @@ class Build(models.Model):
             if key == name:
                 return value
         return default
+
+    @property
+    def revision(self):
+        return self.get_property('got_revision')
