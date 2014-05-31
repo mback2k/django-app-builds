@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
+import json
 
 class Project(models.Model):
     name = models.CharField(_('Name'), max_length=50, unique=True)
@@ -74,3 +75,11 @@ class Build(models.Model):
 
     def __unicode__(self):
         return u'%s:%d' % (self.builder, self.number)
+
+    def get_property(self, name, default=None):
+        if not self._properties:
+            self._properties = json.loads(self.properties)
+        for key, value, source in self._properties:
+            if key == name:
+                return value
+        return default
