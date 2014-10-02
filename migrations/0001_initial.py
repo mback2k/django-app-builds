@@ -1,147 +1,112 @@
 # -*- coding: utf-8 -*-
-from south.utils import datetime_utils as datetime
-from south.db import db
-from south.v2 import SchemaMigration
-from django.db import models
+from __future__ import unicode_literals
+
+from django.db import models, migrations
 
 
-class Migration(SchemaMigration):
+class Migration(migrations.Migration):
 
-    def forwards(self, orm):
-        # Adding model 'Project'
-        db.create_table(u'builds_project', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=50)),
-        ))
-        db.send_create_signal(u'builds', ['Project'])
+    dependencies = [
+    ]
 
-        # Adding model 'Repository'
-        db.create_table(u'builds_repository', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
-        ))
-        db.send_create_signal(u'builds', ['Repository'])
-
-        # Adding model 'Change'
-        db.create_table(u'builds_change', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('project', self.gf('django.db.models.fields.related.ForeignKey')(related_name='changes', to=orm['builds.Project'])),
-            ('repository', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='changes', null=True, to=orm['builds.Repository'])),
-            ('revision', self.gf('django.db.models.fields.CharField')(max_length=40)),
-            ('comments', self.gf('django.db.models.fields.TextField')()),
-            ('when', self.gf('django.db.models.fields.DateTimeField')()),
-            ('who', self.gf('django.db.models.fields.CharField')(max_length=100)),
-        ))
-        db.send_create_signal(u'builds', ['Change'])
-
-        # Adding unique constraint on 'Change', fields ['project', 'repository', 'revision']
-        db.create_unique(u'builds_change', ['project_id', 'repository_id', 'revision'])
-
-        # Adding model 'Builder'
-        db.create_table(u'builds_builder', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=50)),
-            ('link', self.gf('django.db.models.fields.URLField')(max_length=200)),
-        ))
-        db.send_create_signal(u'builds', ['Builder'])
-
-        # Adding model 'Build'
-        db.create_table(u'builds_build', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('builder', self.gf('django.db.models.fields.related.ForeignKey')(related_name='builds', to=orm['builds.Builder'])),
-            ('number', self.gf('django.db.models.fields.IntegerField')()),
-            ('completed', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('result', self.gf('django.db.models.fields.SmallIntegerField')(null=True, blank=True)),
-            ('simplified_result', self.gf('django.db.models.fields.NullBooleanField')(null=True, blank=True)),
-            ('start_time', self.gf('django.db.models.fields.DateTimeField')(null=True, blank=True)),
-            ('end_time', self.gf('django.db.models.fields.DateTimeField')(null=True, blank=True)),
-            ('duration', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('properties', self.gf('django.db.models.fields.TextField')()),
-            ('data', self.gf('django.db.models.fields.TextField')()),
-        ))
-        db.send_create_signal(u'builds', ['Build'])
-
-        # Adding unique constraint on 'Build', fields ['builder', 'number']
-        db.create_unique(u'builds_build', ['builder_id', 'number'])
-
-        # Adding M2M table for field changes on 'Build'
-        m2m_table_name = db.shorten_name(u'builds_build_changes')
-        db.create_table(m2m_table_name, (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('build', models.ForeignKey(orm[u'builds.build'], null=False)),
-            ('change', models.ForeignKey(orm[u'builds.change'], null=False))
-        ))
-        db.create_unique(m2m_table_name, ['build_id', 'change_id'])
-
-
-    def backwards(self, orm):
-        # Removing unique constraint on 'Build', fields ['builder', 'number']
-        db.delete_unique(u'builds_build', ['builder_id', 'number'])
-
-        # Removing unique constraint on 'Change', fields ['project', 'repository', 'revision']
-        db.delete_unique(u'builds_change', ['project_id', 'repository_id', 'revision'])
-
-        # Deleting model 'Project'
-        db.delete_table(u'builds_project')
-
-        # Deleting model 'Repository'
-        db.delete_table(u'builds_repository')
-
-        # Deleting model 'Change'
-        db.delete_table(u'builds_change')
-
-        # Deleting model 'Builder'
-        db.delete_table(u'builds_builder')
-
-        # Deleting model 'Build'
-        db.delete_table(u'builds_build')
-
-        # Removing M2M table for field changes on 'Build'
-        db.delete_table(db.shorten_name(u'builds_build_changes'))
-
-
-    models = {
-        u'builds.build': {
-            'Meta': {'ordering': "('-start_time',)", 'unique_together': "(('builder', 'number'),)", 'object_name': 'Build'},
-            'builder': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'builds'", 'to': u"orm['builds.Builder']"}),
-            'changes': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'builds'", 'symmetrical': 'False', 'to': u"orm['builds.Change']"}),
-            'completed': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'data': ('django.db.models.fields.TextField', [], {}),
-            'duration': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'end_time': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'number': ('django.db.models.fields.IntegerField', [], {}),
-            'properties': ('django.db.models.fields.TextField', [], {}),
-            'result': ('django.db.models.fields.SmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'simplified_result': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
-            'start_time': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'})
-        },
-        u'builds.builder': {
-            'Meta': {'ordering': "('name',)", 'object_name': 'Builder'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'link': ('django.db.models.fields.URLField', [], {'max_length': '200'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '50'})
-        },
-        u'builds.change': {
-            'Meta': {'ordering': "('-when',)", 'unique_together': "(('project', 'repository', 'revision'),)", 'object_name': 'Change'},
-            'comments': ('django.db.models.fields.TextField', [], {}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'project': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'changes'", 'to': u"orm['builds.Project']"}),
-            'repository': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'changes'", 'null': 'True', 'to': u"orm['builds.Repository']"}),
-            'revision': ('django.db.models.fields.CharField', [], {'max_length': '40'}),
-            'when': ('django.db.models.fields.DateTimeField', [], {}),
-            'who': ('django.db.models.fields.CharField', [], {'max_length': '100'})
-        },
-        u'builds.project': {
-            'Meta': {'ordering': "('name',)", 'object_name': 'Project'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '50'})
-        },
-        u'builds.repository': {
-            'Meta': {'ordering': "('name',)", 'object_name': 'Repository'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'})
-        }
-    }
-
-    complete_apps = ['builds']
+    operations = [
+        migrations.CreateModel(
+            name='Build',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('number', models.IntegerField(verbose_name='Number')),
+                ('completed', models.BooleanField(default=False, verbose_name='Completed')),
+                ('result', models.SmallIntegerField(blank=True, null=True, verbose_name='Result', choices=[(0, 'Success'), (1, 'Warnings'), (2, 'Failure'), (3, 'Skipped'), (4, 'Exception'), (5, 'Retry')])),
+                ('simplified_result', models.NullBooleanField(verbose_name='Simplified result')),
+                ('start_time', models.DateTimeField(null=True, verbose_name='Start time', blank=True)),
+                ('end_time', models.DateTimeField(null=True, verbose_name='End time', blank=True)),
+                ('duration', models.IntegerField(null=True, verbose_name='Duration', blank=True)),
+                ('properties', models.TextField(verbose_name='Properties')),
+                ('data', models.TextField(verbose_name='Data')),
+            ],
+            options={
+                'ordering': ('-start_time',),
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Builder',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.CharField(unique=True, max_length=50, verbose_name='Name')),
+                ('link', models.URLField(help_text='JSON API', verbose_name='Link')),
+            ],
+            options={
+                'ordering': ('name',),
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Change',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('revision', models.CharField(max_length=40, verbose_name='Revision')),
+                ('comments', models.TextField(verbose_name='Comments')),
+                ('when', models.DateTimeField(verbose_name='When')),
+                ('who', models.CharField(max_length=100, verbose_name='Who')),
+            ],
+            options={
+                'ordering': ('-when',),
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Project',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.CharField(unique=True, max_length=50, verbose_name='Name')),
+            ],
+            options={
+                'ordering': ('name',),
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Repository',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.CharField(unique=True, max_length=250, verbose_name='Name')),
+            ],
+            options={
+                'ordering': ('name',),
+            },
+            bases=(models.Model,),
+        ),
+        migrations.AddField(
+            model_name='change',
+            name='project',
+            field=models.ForeignKey(related_name=b'changes', to='builds.Project'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='change',
+            name='repository',
+            field=models.ForeignKey(related_name=b'changes', blank=True, to='builds.Repository', null=True),
+            preserve_default=True,
+        ),
+        migrations.AlterUniqueTogether(
+            name='change',
+            unique_together=set([('project', 'repository', 'revision')]),
+        ),
+        migrations.AddField(
+            model_name='build',
+            name='builder',
+            field=models.ForeignKey(related_name=b'builds', to='builds.Builder'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='build',
+            name='changes',
+            field=models.ManyToManyField(related_name=b'builds', to='builds.Change'),
+            preserve_default=True,
+        ),
+        migrations.AlterUniqueTogether(
+            name='build',
+            unique_together=set([('builder', 'number')]),
+        ),
+    ]
