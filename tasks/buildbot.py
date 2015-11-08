@@ -7,7 +7,7 @@ from ..models import Project, Repository, Change, Builder, Build
 from .buildbot_json import Buildbot
 import json, datetime
 
-@periodic_task(run_every=crontab(minute='*/10'))
+@periodic_task(run_every=crontab(minute='*/10+3'))
 def query_buildbot():
     for builder in Builder.objects.all():
         build_last_complete = builder.builds.filter(completed=True).order_by('number').last()
