@@ -33,7 +33,7 @@
 """
 
 __author__ = 'maruel@chromium.org'
-__version__ = '1.2'
+__version__ = '1.2' # Ported to Python 3.
 
 import code
 import datetime
@@ -43,7 +43,8 @@ import logging
 import optparse
 import time
 import urllib
-import urllib2
+import urllib.parse
+import urllib.request
 import sys
 
 try:
@@ -176,7 +177,7 @@ class AddressableDataNode(AddressableBaseDataNode):  # pylint: disable=W0223
   """Automatically encodes the url."""
 
   def __init__(self, parent, url, data):
-    super(AddressableDataNode, self).__init__(parent, urllib.quote(url), data)
+    super(AddressableDataNode, self).__init__(parent, urllib.parse.quote(url), data)
 
 
 class NonAddressableDataNode(Node):  # pylint: disable=W0223
@@ -309,7 +310,7 @@ class NonAddressableNodeList(VirtualNodeList):  # pylint: disable=W0223
   @property
   def cached_children(self):
     if self.parent.cached_data is not None:
-      for i in xrange(len(self.parent.cached_data[self.subkey])):
+      for i in range(len(self.parent.cached_data[self.subkey])):
         yield self[i]
 
   @property
@@ -343,7 +344,7 @@ class NonAddressableNodeList(VirtualNodeList):  # pylint: disable=W0223
   def __iter__(self):
     """Enables 'for i in obj:'. It returns children."""
     if self.data:
-      for i in xrange(len(self.data)):
+      for i in range(len(self.data)):
         yield self[i]
 
   def __getitem__(self, key):
@@ -374,7 +375,7 @@ class AddressableNodeList(NodeList):
 
   @property
   def cached_children(self):
-    for item in self._cache.itervalues():
+    for item in self._cache.values():
       if item.cached_data is not None:
         yield item
 
@@ -417,7 +418,7 @@ class AddressableNodeList(NodeList):
       if to_fetch:
         # Similar to cache(). The only reason to sort is to simplify testing.
         params = '&'.join(
-            'select=%s' % urllib.quote(str(v)) for v in sorted(to_fetch))
+            'select=%s' % urllib.parse.quote(str(v)) for v in sorted(to_fetch))
         data = self.read('?' + params)
         for key in sorted(data):
           self._create_obj(key, data[key])
@@ -431,7 +432,7 @@ class AddressableNodeList(NodeList):
   def discard(self):
     """Discards temporary children."""
     super(AddressableNodeList, self).discard()
-    for v in self._cache.itervalues():
+    for v in self._cache.values():
       v.discard()
 
   def read(self, suburl):
@@ -665,7 +666,7 @@ class BuildSteps(NonAddressableNodeList):
 
   def __getitem__(self, key):
     """Accept step name in addition to index number."""
-    if isinstance(key, basestring):
+    if isinstance(key, str):
       # It's a string, try to find the corresponding index.
       for i, step in enumerate(self.data):
         if step['name'] == key:
@@ -827,7 +828,7 @@ class Builds(AddressableNodeList):
     To access the older builds, use self.iterall() instead.
     """
     self.cache()
-    return reversed(self._cache.values())
+    return reversed(list(self._cache.values()))
 
   def iterall(self):
     """Returns Build objects in decreasing order unbounded up to build 0.
@@ -839,7 +840,7 @@ class Builds(AddressableNodeList):
     # Only cache keys here.
     self.cache_keys()
     if self._keys:
-      for i in xrange(max(self._keys), -1, -1):
+      for i in range(max(self._keys), -1, -1):
         yield self[i]
 
   def cache_keys(self):
@@ -936,14 +937,14 @@ class Buildbot(AddressableBaseDataNode):
     else:
       url += '?filter=1'
     logging.info('read(%s)' % suburl)
-    channel = urllib.urlopen(url)
+    channel = urllib.request.urlopen(url)
     data = channel.read()
     try:
       return json.loads(data)
     except ValueError:
       if channel.getcode() >= 400:
         # Convert it into an HTTPError for easier processing.
-        raise urllib2.HTTPError(
+        raise urllib.request.HTTPError(
             url, channel.getcode(), '%s:\n%s' % (url, data), channel.headers,
             None)
       raise
@@ -1002,15 +1003,15 @@ def CMDpending(parser, args):
     pending_builds = builder.data.get('pendingBuilds', 0)
     if not pending_builds:
       continue
-    print 'Builder %s: %d' % (builder.name, pending_builds)
+    print('Builder %s: %d' % (builder.name, pending_builds))
     if not options.quiet:
       for pending in builder.pending_builds.data:
         if 'revision' in pending['source']:
-          print '  revision: %s' % pending['source']['revision']
+          print('  revision: %s' % pending['source']['revision'])
         for change in pending['source']['changes']:
-          print '  change:'
-          print '    comment: %r' % unicode(change['comments'][:50])
-          print '    who:     %s' % change['who']
+          print('  change:')
+          print('    comment: %r' % str(change['comments'][:50]))
+          print('    who:     %s' % change['who'])
   return 0
 
 
@@ -1078,7 +1079,7 @@ def CMDdisconnected(parser, args):
     parser.error('Unrecognized parameters: %s' % ' '.join(args))
   for slave in buildbot.slaves:
     if not slave.connected:
-      print slave.name
+      print(slave.name)
   return 0
 
 
@@ -1110,10 +1111,10 @@ def find_idle_busy_slaves(parser, args, show_idle):
       slaves = natsorted(set(slaves) & set(busy_slaves))
     if options.quiet:
       for slave in slaves:
-        print slave
+        print(slave)
     else:
       if slaves:
-        print 'Builder %s: %s' % (builder.name, ', '.join(slaves))
+        print('Builder %s: %s' % (builder.name, ', '.join(slaves)))
   return 0
 
 
@@ -1190,20 +1191,20 @@ def CMDlast_failure(parser, args):
       no_cache=options.no_cache):
 
     if print_builders and last_builder != build.builder:
-      print build.builder.name
+      print(build.builder.name)
       last_builder = build.builder
 
     if options.quiet:
       if options.slaves:
-        print '%s: %s' % (build.builder.name, build.slave.name)
+        print('%s: %s' % (build.builder.name, build.slave.name))
       else:
-        print build.slave.name
+        print(build.slave.name)
     else:
       out = '%d on %s: blame:%s' % (
           build.number, build.slave.name, ', '.join(build.blame))
       if print_builders:
         out = '  ' + out
-      print out
+      print(out)
 
       if len(options.steps) != 1:
         for step in build.steps:
@@ -1213,7 +1214,7 @@ def CMDlast_failure(parser, args):
             out = '  %s: "%s"' % (step.data['name'], summary)
             if print_builders:
               out = '  ' + out
-            print out
+            print(out)
   return 0
 
 
@@ -1238,16 +1239,16 @@ def CMDcurrent(parser, args):
         if build.blame:
           for blamed in build.blame:
             blame.add(blamed)
-    print '\n'.join(blame)
+    print('\n'.join(blame))
     return 0
 
   for builder in options.builders:
     builder = buildbot.builders[builder]
     if not options.quiet and builder.current_builds:
-      print builder.name
+      print(builder.name)
     for build in builder.current_builds:
       if options.quiet:
-        print build.slave.name
+        print(build.slave.name)
       else:
         out = '%4d: slave=%10s' % (build.number, build.slave.name)
         out += '  duration=%5d' % (build.duration or 0)
@@ -1257,7 +1258,7 @@ def CMDcurrent(parser, args):
           out += '           '
         if build.blame:
           out += '  blame=' + ', '.join(build.blame)
-        print out
+        print(out)
 
   return 0
 
@@ -1295,9 +1296,9 @@ def CMDbuilds(parser, args):
             out += '%s/' % build.slave.name
           out += '%d  revision:%s  result:%s  blame:%s' % (
               build.number, build.revision, build.result, ','.join(build.blame))
-          print out
+          print(out)
         else:
-          print build
+          print(build)
   return 0
 
 
@@ -1324,27 +1325,28 @@ def CMDcount(parser, args):
     builder = buildbot.builders[builder]
     counts[builder.name] = 0
     if not options.quiet:
-      print builder.name
+      print(builder.name)
     for build in builder.builds.iterall():
       try:
         start_time = build.start_time
-      except urllib2.HTTPError:
+      except urllib.request.HTTPError:
         # The build was probably trimmed.
-        print >> sys.stderr, (
-            'Failed to fetch build %s/%d' % (builder.name, build.number))
+        print(
+            'Failed to fetch build %s/%d' % (builder.name, build.number),
+            file=sys.stderr)
         continue
       if start_time >= since:
         counts[builder.name] += 1
       else:
         break
     if not options.quiet:
-      print '.. %d' % counts[builder.name]
+      print('.. %d' % counts[builder.name])
 
   align_name = max(len(b) for b in counts)
-  align_number = max(len(str(c)) for c in counts.itervalues())
+  align_number = max(len(str(c)) for c in counts.values())
   for builder in sorted(counts):
-    print '%*s: %*d' % (align_name, builder, align_number, counts[builder])
-  print 'Total: %d' % sum(counts.itervalues())
+    print('%*s: %*d' % (align_name, builder, align_number, counts[builder]))
+  print('Total: %d' % sum(counts.values()))
   return 0
 
 
@@ -1361,7 +1363,7 @@ def gen_parser():
   old_parser_args = parser.parse_args
   def Parse(*args, **kwargs):
     options, args = old_parser_args(*args, **kwargs)
-    if options.verbose >= 2:
+    if options.verbose and options.verbose >= 2:
       logging.basicConfig(level=logging.DEBUG)
     elif options.verbose:
       logging.basicConfig(level=logging.INFO)

@@ -9,7 +9,7 @@ class Project(models.Model):
     class Meta:
         ordering = ('name',)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 class Repository(models.Model):
@@ -18,7 +18,7 @@ class Repository(models.Model):
     class Meta:
         ordering = ('name',)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 class Change(models.Model):
@@ -33,7 +33,7 @@ class Change(models.Model):
         ordering = ('-when',)
         unique_together = ('project', 'repository', 'revision')
 
-    def __unicode__(self):
+    def __str__(self):
         return self.revision
 
 class Builder(models.Model):
@@ -43,7 +43,7 @@ class Builder(models.Model):
     class Meta:
         ordering = ('name',)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 class Build(models.Model):
@@ -73,8 +73,8 @@ class Build(models.Model):
         ordering = ('-start_time',)
         unique_together = ('builder', 'number')
 
-    def __unicode__(self):
-        return u'%s:%d' % (self.builder, self.number)
+    def __str__(self):
+        return '%s:%d' % (self.builder, self.number)
 
     def get_property(self, name, default=None):
         if not hasattr(self, '_properties'):

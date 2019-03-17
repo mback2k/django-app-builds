@@ -30,7 +30,7 @@ def fetch_builds_from_buildbot(link, builder_name, build_number_start):
         buildbot_builds = buildbot_builder.builds
         buildbot_builds.cache()
         buildbot_latest_build = buildbot_builds[-1]
-        for build_number in xrange(build_number_start, buildbot_latest_build.number+1):
+        for build_number in range(build_number_start, buildbot_latest_build.number+1):
             fetch_build_from_buildbot.delay(link, builder_name, build_number)
 
 @task(ignore_result=True)
@@ -62,7 +62,7 @@ def parse_build(buildbot_build, builder_name, build_number):
                                                      builder=builder,
                                                      defaults=build_data)
         if not created:
-            for key, value in build_data.iteritems():
+            for key, value in build_data.items():
                 setattr(build, key, value)
             build.save(update_fields=build_data.keys())
 
@@ -110,7 +110,7 @@ def parse_change(buildbot_change, project, repository, build):
                                                        revision=buildbot_change.get('revision'),
                                                        defaults=change_data)
         if not created:
-            for key, value in change_data.iteritems():
+            for key, value in change_data.items():
                 setattr(change, key, value)
             change.save(update_fields=change_data.keys())
 
