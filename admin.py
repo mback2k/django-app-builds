@@ -14,7 +14,7 @@ class ChangeAdmin(admin.ModelAdmin):
     list_display = ('project', 'repository', 'revision', 'when', 'who')
     list_filter = ('project', 'repository', 'when')
     search_fields = ('revision', 'comments', 'who')
-    date_hierarchy = 'when'
+    #date_hierarchy = 'when'
 
 class BuilderAdmin(admin.ModelAdmin):
     list_display = ('name', 'link')
@@ -26,7 +26,7 @@ class BuildAdmin(admin.ModelAdmin):
                     'start_time', 'end_time', 'duration')
     list_filter = ('builder', 'result', 'simplified_result', 'start_time')
     search_fields = ('changes__revision', 'changes__comments', 'changes__who')
-    date_hierarchy = 'start_time'
+    #date_hierarchy = 'start_time'
 
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Repository, RepositoryAdmin)
